@@ -18,7 +18,7 @@ async function signToken(tokenSignature) {
 async function verifyToken(token) {
   try {
     const verified = jwt.verify(token, process.env.JWT_AUTH_SECRET);
-    return verified;
+    return { success: true, token: verified };
   } catch (error) {
     return failed(UNAUTHORIZED, 'You are attempting an invalid credentials');
   }

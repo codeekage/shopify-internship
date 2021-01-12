@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const userRoutes = require('./gateway/routes/users');
 const authRoutes = require('./gateway/routes/auth');
 const { PageNotFound, WelcomeHandler, ClientIPAddress } = require('./gateway/controllers/handler');
+const { verifyTokenHandler } = require('./gateway/middleware/auth');
 
 const app = express();
 
@@ -14,8 +15,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(ClientIPAddress);
 
 app.get('/v1', WelcomeHandler);
-app.use('/v1/user', userRoutes);
 app.use('/v1/auth', authRoutes);
+app.use(verifyTokenHandler);
+app.use('/v1/user', userRoutes);
 app.use('*', PageNotFound);
 
 app.listen(process.env.PORT, () => {

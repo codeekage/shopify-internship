@@ -25,6 +25,24 @@ async function createUserController(req, res) {
   }
 }
 
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function getUserProfile(req, res) {
+  try {
+    return res.status(200).json({ user: { ...req.user, _id: undefined } });
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: ErrorMessage.GATEWAY_INTERNAL_SERVER_ERROR,
+    });
+  }
+}
+
 module.exports = {
   createUserController,
+  getUserProfile,
 };
