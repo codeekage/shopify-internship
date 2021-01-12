@@ -1,9 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 const { request: HttpRequest, response: HttpResponse } = require('express');
 const { INTERNAL_SERVER_ERROR, UNAUTHORIZED } = require('http-status');
-const { verifyToken } = require('../../app/helper/auth');
-const { getUser } = require('../../app/modules/users');
-const { decrypt } = require('../../app/utils/crypto');
+const { verifyAuthToken } = require('../../app/modules/auth');
 const ErrorMessage = require('../constants');
 
 /**
@@ -21,14 +19,7 @@ async function verifyTokenHandler(req, res, next) {
       });
     }
     const [, authToken] = authorization.split(' ');
-    const verifyUser = await verifyToken(authToken);
-    if (!verifyUser.success) {
-      return res.status(UNAUTHORIZED).json({ ...verifyUser, status: undefined });
-    }
-    const { token } = verifyUser;
-    const decryptToken = decrypt(token.signature);
-    const userId = decryptToken;
-    const userData = await getUser({ userId });
+    const userData = await verifyAuthToken({ authToken });
     if (!userData.success) {
       return res.status(userData.status).json(userData.error);
     }

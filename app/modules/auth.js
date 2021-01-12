@@ -1,10 +1,11 @@
-const { UNAUTHORIZED } = require('http-status');
+const { UNAUTHORIZED, BAD_REQUEST } = require('http-status');
+const { Types } = require('mongoose');
 const { User } = require('../models');
 const { failed, success } = require('../utils/responses');
-const { INVALID_LOGIN } = require('../constants');
+const { INVALID_LOGIN, USER_NOT_FOUND } = require('../constants');
 const { addToBlockList, isBlocked } = require('../helper/redis');
-const { signToken } = require('../helper/auth');
-const { encrypt } = require('../utils/crypto');
+const { signToken, verifyToken } = require('../helper/auth');
+const { encrypt, decrypt } = require('../utils/crypto');
 
 async function login({ username, password, ipAddress }) {
   try {
@@ -32,6 +33,30 @@ async function login({ username, password, ipAddress }) {
   }
 }
 
+async function verifyAuthToken({ authToken }) {
+  try {
+    const verifyUser = await verifyToken(authToken);
+    if (!verifyUser.success) {
+      return failed(UNAUTHORIZED, verifyUser);
+    }
+    const { token } = verifyUser;
+    const decryptToken = decrypt(token.signature);
+    const userId = Types.ObjectId(decryptToken);
+    const userData = await User.findOne({ _id: userId }).lean();
+
+    if (!userData) {
+      return failed(BAD_REQUEST, USER_NOT_FOUND);
+    }
+
+    userData._id = undefined;
+    return success(userData);
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
 module.exports = {
   login,
+  verifyAuthToken,
 };
