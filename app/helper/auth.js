@@ -1,5 +1,6 @@
 const { UNAUTHORIZED } = require('http-status');
 const jwt = require('jsonwebtoken');
+const { INVALID_CREDENTIALS } = require('../constants');
 const { failed } = require('../utils/responses');
 
 async function signToken(tokenSignature) {
@@ -7,7 +8,6 @@ async function signToken(tokenSignature) {
     const expiresIn = 24 * 60 * 60;
     const token = jwt.sign(tokenSignature, process.env.JWT_AUTH_SECRET, {
       expiresIn,
-      subject: 'user',
     });
     return { token, expiresIn };
   } catch (error) {
@@ -20,7 +20,7 @@ async function verifyToken(token) {
     const verified = jwt.verify(token, process.env.JWT_AUTH_SECRET);
     return { success: true, token: verified };
   } catch (error) {
-    return failed(UNAUTHORIZED, 'You are attempting an invalid credentials');
+    return failed(UNAUTHORIZED, INVALID_CREDENTIALS);
   }
 }
 

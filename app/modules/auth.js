@@ -2,8 +2,8 @@ const { UNAUTHORIZED, BAD_REQUEST } = require('http-status');
 const { Types } = require('mongoose');
 const { User } = require('../models');
 const { failed, success } = require('../utils/responses');
-const { INVALID_LOGIN, USER_NOT_FOUND } = require('../constants');
-const { addToBlockList, isBlocked } = require('../helper/redis');
+const { INVALID_LOGIN, USER_NOT_FOUND, ENV } = require('../constants');
+const { addToBlockList, isBlocked, getRetryCount } = require('../helper/redis');
 const { signToken, verifyToken } = require('../helper/auth');
 const { encrypt, decrypt } = require('../utils/crypto');
 
@@ -17,10 +17,11 @@ async function login({ username, password, ipAddress }) {
     if (!user || !user.comparePassword(password)) {
       await addToBlockList({
         block: ipAddress,
-        retryCount: 5,
-        expiresIn: 1, // in mins
+        retryCount: ENV.RETRY_COUNT,
+        expiresIn: ENV.BLOCK_EXPIRY_TIME, // in mins
       });
-      return failed(UNAUTHORIZED, INVALID_LOGIN);
+      const retryLeft = await getRetryCount({ blockKey: ipAddress });
+      return failed(UNAUTHORIZED, `${INVALID_LOGIN}. You have ${!retryLeft ? 0 : retryLeft} retries left before getting blocked`);
     }
     const { _doc: result } = user;
     result.password = undefined;

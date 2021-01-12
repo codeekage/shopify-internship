@@ -18,6 +18,8 @@ const asyncClient = {
   incr: util.promisify(client.incr).bind(client),
   ttl: util.promisify(client.ttl).bind(client),
   smembers: util.promisify(client.smembers).bind(client),
+  decr: util.promisify(client.decr).bind(client),
+  decrby: util.promisify(client.decrby).bind(client),
 };
 
 module.exports = {

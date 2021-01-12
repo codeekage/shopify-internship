@@ -33,13 +33,27 @@ async function isBlocked({ blockKey }) {
     return { error };
   }
 }
+async function getRetryCount({ blockKey }) {
+  try {
+    const retryCount = generateRedisKey(
+      {
+        key: blockKey,
+        type: Constants.REDIS_KEYS[3],
+      },
+    );
+    return await redis.get(retryCount);
+  } catch (error) {
+    console.error(error);
+    return { error };
+  }
+}
 
 /**
  * @param {{block: string, expiresIn: number, retryCount: number}} param
  */
 async function addToBlockList({ block, expiresIn, retryCount }) {
   try {
-    const [requestCountKey, cooldownKey, isBlockedKey] = generateRedisKey(
+    const [requestCountKey, cooldownKey, isBlockedKey, retryCountKey] = generateRedisKey(
       {
         key: block,
         types: Constants.REDIS_KEYS,
@@ -48,6 +62,7 @@ async function addToBlockList({ block, expiresIn, retryCount }) {
     const ttl = await redis.ttl(cooldownKey);
     if (ttl > 0) {
       await redis.set(isBlockedKey, true);
+      await redis.del(retryCountKey);
       return {
         status: true,
         message: blockMessage(ttl),
@@ -55,6 +70,11 @@ async function addToBlockList({ block, expiresIn, retryCount }) {
     }
     await redis.set(isBlockedKey, false);
     const requestCalls = await redis.incr(requestCountKey);
+    if (requestCalls === 1) {
+      const counter = retryCount + 1;
+      await redis.set(retryCountKey, counter);
+    }
+    await redis.decr(retryCountKey);
     if (requestCalls >= retryCount) {
       await redis.set(cooldownKey, 1, 'EX', 60 * expiresIn);
       await redis.del(requestCountKey);
@@ -73,4 +93,5 @@ async function addToBlockList({ block, expiresIn, retryCount }) {
 module.exports = {
   addToBlockList,
   isBlocked,
+  getRetryCount,
 };
