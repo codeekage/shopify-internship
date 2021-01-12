@@ -1,5 +1,5 @@
 const httpStatus = require('http-status');
-const Constants = require('../constants/responses');
+const Constants = require('../constants');
 
 /**
  * @param {{}} data
