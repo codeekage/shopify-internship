@@ -6,6 +6,7 @@ const { INVALID_LOGIN, USER_NOT_FOUND, ENV } = require('../constants');
 const { addToBlockList, isBlocked, getRetryCount } = require('../helper/redis');
 const { signToken, verifyToken } = require('../helper/auth');
 const { encrypt, decrypt } = require('../utils/crypto');
+const { retryCountBlockMessage } = require('../constants/responsesbuilder');
 
 async function login({ username, password, ipAddress }) {
   try {
@@ -21,7 +22,7 @@ async function login({ username, password, ipAddress }) {
         expiresIn: ENV.BLOCK_EXPIRY_TIME, // in mins
       });
       const retryLeft = await getRetryCount({ blockKey: ipAddress });
-      return failed(UNAUTHORIZED, `${INVALID_LOGIN}. You have ${!retryLeft ? 0 : retryLeft} retries left before getting blocked`);
+      return failed(UNAUTHORIZED, `${INVALID_LOGIN}. ${retryCountBlockMessage(retryLeft)}`);
     }
     const { _doc: result } = user;
     result.password = undefined;
