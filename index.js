@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const userRoutes = require('./gateway/routes/users');
 const authRoutes = require('./gateway/routes/auth');
-const { PageNotFound, WelcomeHandler, ClientIPAddress } = require('./gateway/controllers/handler');
+const { PageNotFound, WelcomeHandler, ClientIPAddress } = require('./gateway/middleware/handler');
 const { verifyTokenHandler } = require('./gateway/middleware/auth');
 
 const app = express();
