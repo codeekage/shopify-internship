@@ -5,7 +5,7 @@ mongoose.Promise = global.Promise;
 const connectionErrorHandler = (err) => {
   try {
     if (err) throw err;
-    console.info('DB Connection, successful');
+    console.info('DB Connection Successful');
   } catch (error) {
     console.error(error);
   }

@@ -4,7 +4,7 @@ const { User } = require('../models');
 const { failed, success } = require('../utils/responses');
 const { INVALID_LOGIN, USER_NOT_FOUND, ENV } = require('../constants');
 const { addToBlockList, isBlocked, getRetryCount } = require('../helper/redis');
-const { signToken, verifyToken } = require('../helper/auth');
+const { signToken, verifyToken, logLogins } = require('../helper/auth');
 const { encrypt, decrypt } = require('../utils/crypto');
 const { retryCountBlockMessage } = require('../constants/responsesbuilder');
 
@@ -16,6 +16,7 @@ async function login({ username, password, ipAddress }) {
     }
     const user = await User.findOne({ username }).select('+password');
     if (!user || !user.comparePassword(password)) {
+      // block ip address after too many failed logins
       await addToBlockList({
         block: ipAddress,
         retryCount: ENV.RETRY_COUNT,
@@ -28,6 +29,7 @@ async function login({ username, password, ipAddress }) {
     result.password = undefined;
     const signature = encrypt(`${result._id}`);
     const token = await signToken({ signature });
+    await logLogins({ ipAddress, userId: result._id });
     return success({ ...result, ...token });
   } catch (error) {
     console.error(error);
