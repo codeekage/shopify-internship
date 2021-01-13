@@ -35,11 +35,11 @@ async function verifyToken(token) {
 
 /**
  * @description logs logins
- * @param {{ userId: mongoose.Types.ObjectId, ipAddress: string }} param0
+ * @param {{ userId: mongoose.Types.ObjectId, ipAddress: string, loginAttempts: number }} param0
  */
-async function logLogins({ userId, ipAddress }) {
+async function logLogins({ userId, ipAddress, loginAttempts }) {
   try {
-    const authLog = await AuthLog.create({ userId, ipAddress });
+    const authLog = await AuthLog.create({ userId, ipAddress, loginAttempts });
     if (!authLog) {
       console.error(authLog);
       return failed(null, UNEXPECTED_ERROR_OCCURED);

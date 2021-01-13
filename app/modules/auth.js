@@ -14,6 +14,7 @@ async function login({ username, password, ipAddress }) {
     if (isIpBlocked.status === 'true') {
       return failed(UNAUTHORIZED, isIpBlocked.message);
     }
+    let retryCount = 1;
     const user = await User.findOne({ username }).select('+password');
     if (!user || !user.comparePassword(password)) {
       // block ip address after too many failed logins
@@ -22,14 +23,14 @@ async function login({ username, password, ipAddress }) {
         retryCount: ENV.RETRY_COUNT,
         expiresIn: ENV.BLOCK_EXPIRY_TIME, // in mins
       });
-      const retryLeft = await getRetryCount({ blockKey: ipAddress });
-      return failed(UNAUTHORIZED, `${INVALID_LOGIN}. ${retryCountBlockMessage(retryLeft)}`);
+      retryCount = await getRetryCount({ blockKey: ipAddress });
+      return failed(UNAUTHORIZED, `${INVALID_LOGIN}. ${retryCountBlockMessage(retryCount)}`);
     }
     const { _doc: result } = user;
     result.password = undefined;
     const signature = encrypt(`${result._id}`);
     const token = await signToken({ signature });
-    await logLogins({ ipAddress, userId: result._id });
+    await logLogins({ ipAddress, userId: result._id, loginAttempts: retryCount });
     return success({ ...result, ...token });
   } catch (error) {
     console.error(error);
