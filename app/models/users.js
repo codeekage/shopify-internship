@@ -8,7 +8,9 @@ const UserSchema = new Schema({
   email: {
     type: String, required: true, unique: true, index: true,
   },
-  password: { type: String, required: true, select: false },
+  password: {
+    type: String, required: true, select: false, minlength: 8,
+  },
 }, { timestamps: true });
 
 UserSchema.path('email').validate((email) => {

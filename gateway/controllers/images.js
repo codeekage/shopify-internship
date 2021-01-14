@@ -17,7 +17,7 @@ async function imageUploadController(req, res) {
     const imageBuffering = Object.values(req.files);
     const response = [];
 
-    const { permission, price, discount } = req.body;
+    const { permission, price, discount } = req.query;
     for (let index = 0; index < imageBuffering.length; index += 1) {
       const image = imageBuffering[index];
       // eslint-disable-next-line no-await-in-loop

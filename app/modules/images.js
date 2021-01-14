@@ -26,7 +26,7 @@ async function uploadImage({
     const imageCreate = await Images.create({
       userId,
       permission,
-      price,
+      price: price * 100,
       discount,
       imageStore: {
         imageURL,

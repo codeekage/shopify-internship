@@ -19,6 +19,12 @@ async function verifyTokenHandler(req, res, next) {
       });
     }
     const [, authToken] = authorization.split(' ');
+    if (!authToken) {
+      return res.status(UNAUTHORIZED).json({
+        success: false,
+        error: 'Unauthorized!',
+      });
+    }
     const userData = await verifyAuthToken({ authToken });
     if (!userData.success) {
       return res.status(userData.status).json(userData.error);
