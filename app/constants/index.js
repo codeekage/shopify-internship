@@ -10,4 +10,7 @@ module.exports = {
     RETRY_COUNT: Number(process.env.RETRY_COUNT),
     BLOCK_EXPIRY_TIME: Number(process.env.BLOCK_EXPIRY_TIME),
   },
+  ENUMS: {
+    IMAGE_PERMISSIONS: ['private', 'public'],
+  },
 };

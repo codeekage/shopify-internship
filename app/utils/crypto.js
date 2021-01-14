@@ -24,7 +24,10 @@ const decrypt = (hash) => {
   return decrpyted.toString();
 };
 
+const randomHex = (length) => crypto.randomBytes(length).toString('hex');
+
 module.exports = {
   encrypt,
   decrypt,
+  randomHex,
 };

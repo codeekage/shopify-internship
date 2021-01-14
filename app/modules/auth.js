@@ -52,8 +52,6 @@ async function verifyAuthToken({ authToken }) {
     if (!userData) {
       return failed(BAD_REQUEST, USER_NOT_FOUND);
     }
-
-    userData._id = undefined;
     return success(userData);
   } catch (error) {
     console.error(error);

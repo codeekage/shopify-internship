@@ -39,7 +39,9 @@ async function verifyToken(token) {
  */
 async function logLogins({ userId, ipAddress, loginAttempts }) {
   try {
-    const authLog = await AuthLog.create({ userId, ipAddress, loginAttempts });
+    const authLog = await AuthLog.create({
+      userId, ipAddress, loginAttempts, lastLoginAt: Date.now(),
+    });
     if (!authLog) {
       console.error(authLog);
       return failed(null, UNEXPECTED_ERROR_OCCURED);

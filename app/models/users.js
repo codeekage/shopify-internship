@@ -9,7 +9,7 @@ const UserSchema = new Schema({
     type: String, required: true, unique: true, index: true,
   },
   password: { type: String, required: true, select: false },
-});
+}, { timestamps: true });
 
 UserSchema.path('email').validate((email) => {
   const emailRegex = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;

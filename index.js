@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const userRoutes = require('./gateway/routes/users');
 const authRoutes = require('./gateway/routes/auth');
+const imagesRoutes = require('./gateway/routes/images');
 const { PageNotFound, WelcomeHandler, ClientIPAddress } = require('./gateway/middleware/handler');
 const { verifyTokenHandler } = require('./gateway/middleware/auth');
 
@@ -18,6 +19,7 @@ app.get('/v1', WelcomeHandler);
 app.use('/v1/auth', authRoutes);
 app.use(verifyTokenHandler);
 app.use('/v1/user', userRoutes);
+app.use('/v1/images', imagesRoutes);
 app.use('*', PageNotFound);
 
 app.listen(process.env.PORT, () => {

@@ -18,7 +18,7 @@ const PageNotFound = (req, res) => res.status(NOT_FOUND).send(Constants.GATEWAY_
  */
 const ClientIPAddress = (req, res, next) => {
   req.ip_address = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  next();
+  return next();
 };
 
 module.exports = {
