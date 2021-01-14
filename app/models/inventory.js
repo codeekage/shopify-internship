@@ -1,15 +1,10 @@
 const { Schema, Types } = require('mongoose');
 
 const InventorySchema = new Schema({
-  ownerId: { type: Types.ObjectId, required: true },
-  buyerId: { type: Types.ObjectId, required: true },
+  userId: { type: Types.ObjectId, required: true },
   imageId: { type: Types.ObjectId, required: true },
-  paidAmount: { type: Types.ObjectId, required: true, default: 0 },
-  imageStore: {
-    imageURL: { type: String, required: true },
-    imageVersion: { type: String, required: true },
-    eTag: String,
-  },
+  amount: { type: Number, required: true, default: 0 },
+  trasnactionType: { type: String, enum: ['purchased', 'sold'], required: true },
 }, { timestamps: true });
 
 module.exports = InventorySchema;
