@@ -1,9 +1,17 @@
 // eslint-disable-next-line no-unused-vars
 const { request: HttpRequest, response: HttpResponse } = require('express');
+const fs = require('fs');
+const path = require('path');
 const { INTERNAL_SERVER_ERROR } = require('http-status');
-const { uploadImage, updateImage } = require('../../app/modules/images');
+const { uploadImage, updateImage, readImage } = require('../../app/modules/images');
 const ErrorMessage = require('../constants');
 
+const tempStorage = ({ tempLocation, Body }) => new Promise((resolve, reject) => {
+  fs.writeFile(`${tempLocation}`, Body, (err) => {
+    if (err) reject(err);
+    resolve(tempLocation);
+  });
+});
 /**
  *
  * @param {HttpRequest} req
@@ -68,7 +76,72 @@ async function imageUpdateController(req, res) {
   }
 }
 
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function imageReadController(req, res) {
+  try {
+    const readImageResponse = await readImage({
+      imageId: req.params.imageId,
+      userId: req.user._id,
+    });
+    if (!readImageResponse.success) {
+      return res.status(readImageResponse.status).json({
+        ...readImageResponse,
+        status: undefined,
+      });
+    }
+    const { Body, imageKey } = readImageResponse.data;
+    const tempLocation = path.join(`${__dirname}/tmp/${imageKey}`);
+    const location = await tempStorage({ tempLocation, Body });
+    setTimeout(() => {
+      fs.unlink(tempLocation, (err) => {
+        if (err) throw err;
+      });
+    }, 4500);
+    return res.status(200).send(`<img src='${location}'/>`);
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error,
+    });
+  }
+}
+
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function imageReadBufferController(req, res) {
+  try {
+    const imageReadBuffer = await readImage({
+      imageId: req.params.imageId,
+      userId: req.user._id,
+    });
+    const { success, status, data } = imageReadBuffer;
+    data.ETag = undefined;
+    data.VersionId = undefined;
+    data.imageKey = undefined;
+    return res.status(status).json({
+      success,
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error,
+    });
+  }
+}
+
 module.exports = {
   imageUploadController,
   imageUpdateController,
+  imageReadController,
+  imageReadBufferController,
 };

@@ -11,6 +11,7 @@ const UserSchema = new Schema({
   password: {
     type: String, required: true, select: false, minlength: 8,
   },
+  wallet: { type: Number, require: true, default: 0 },
 }, { timestamps: true });
 
 UserSchema.path('email').validate((email) => {

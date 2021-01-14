@@ -1,7 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 const mongoose = require('mongoose');
+const { NOT_FOUND, UNAUTHORIZED } = require('http-status');
 const { UNEXPECTED_ERROR_OCCURED } = require('../constants');
-const { uploadImageToS3 } = require('../helper/images');
+const { uploadImageToS3, readImageFromS3 } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
 
@@ -75,7 +76,44 @@ async function updateImage({
   }
 }
 
+async function readImage({ imageId }) {
+  try {
+    const imageData = await Images.findById(imageId).lean();
+    if (!imageData) {
+      return failed(NOT_FOUND, 'Image does not exists');
+    }
+    const imageResult = await readImageFromS3({
+      imageStore: imageData.imageStore,
+    });
+    return success(imageResult);
+  } catch (error) {
+    return failed(null, error);
+  }
+}
+
+async function verifyImagePermission({ userId, imageId }) {
+  try {
+    const imageData = await Images.findById(imageId).lean();
+    if (!imageData) {
+      return failed(NOT_FOUND, 'Image does not exists');
+    }
+    const { permission } = imageData;
+    if (permission !== 'public') {
+      const user = await Images.findOne({ _id: imageId, userId });
+      if (!user) {
+        return failed(UNAUTHORIZED, 'This image is private and cannot be viewed. You might want to make it public to access it.');
+      }
+    }
+    return success();
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
 module.exports = {
   updateImage,
   uploadImage,
+  readImage,
+  verifyImagePermission,
 };

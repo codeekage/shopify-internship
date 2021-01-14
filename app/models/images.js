@@ -17,6 +17,7 @@ const ImageSchema = new Schema({
     eTag: String,
   },
   discountedPrice: Number,
+  avalibility: Boolean,
 }, { timestamps: true });
 
 module.exports = ImageSchema;

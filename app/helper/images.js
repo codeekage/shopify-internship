@@ -26,6 +26,21 @@ function promisifyImageUpload({
   });
 }
 
+function promisifyImageRead({ imageKey, imageVersion }) {
+  return new Promise((resolve, reject) => {
+    s3.getObject({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: imageKey,
+      VersionId: imageVersion,
+    }, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(data);
+    });
+  });
+}
+
 async function uploadImageToS3({ image }) {
   try {
     const imageUploadName = image.name;
@@ -46,6 +61,20 @@ async function uploadImageToS3({ image }) {
   }
 }
 
+async function readImageFromS3({ imageStore }) {
+  try {
+    const { imageURL, imageVersion } = imageStore;
+    const imageKey = imageURL.split('/')[3];
+    const result = await promisifyImageRead({
+      imageKey, imageVersion,
+    });
+    return { ...result, imageKey };
+  } catch (error) {
+    return error;
+  }
+}
+
 module.exports = {
   uploadImageToS3,
+  readImageFromS3,
 };
