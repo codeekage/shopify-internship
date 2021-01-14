@@ -31,9 +31,17 @@ const imageUploadSchema = Joi.object({
   discount: Joi.number().min(1),
 });
 
+const imageUpdateSchema = Joi.object({
+  permission: Joi.string().valid('private', 'public'),
+  price: Joi.number().min(100),
+  discount: Joi.number().min(1),
+  imageId: Joi.string().length(24).required(),
+}).or('permission', 'discount', 'price');
+
 module.exports = {
   schemaLoader,
   loginSchema,
   signUpSchema,
   imageUploadSchema,
+  imageUpdateSchema,
 };

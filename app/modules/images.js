@@ -60,15 +60,15 @@ async function updateImage({
   try {
     const query = {};
     if (permission) query.permission = permission;
-    if (price) query.price = price;
+    if (price) query.price = price * 100;
     if (discount) query.discount = discount;
     const imageUpdate = await Images.findOneAndUpdate({ _id: imageId, userId },
-      { $set: { query } }, { new: true });
+      { $set: query }, { new: true });
 
     if (!imageUpdate) {
       return failed(null, UNEXPECTED_ERROR_OCCURED);
     }
-    return success({ imageUpdate, message: `Image [${query}] updated` });
+    return success({ imageUpdate, message: `Image [${JSON.stringify(query)}] updated` });
   } catch (error) {
     console.error(error);
     return failed(null, error);

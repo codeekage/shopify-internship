@@ -20,6 +20,7 @@ mongoose.connect(
     useUnifiedTopology: true,
     useNewUrlParser: true,
     socketTimeoutMS: 0,
+    useFindAndModify: false,
   },
   connectionErrorHandler,
 );

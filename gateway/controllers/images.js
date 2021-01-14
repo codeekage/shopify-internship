@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 const { request: HttpRequest, response: HttpResponse } = require('express');
 const { INTERNAL_SERVER_ERROR } = require('http-status');
-const { uploadImage } = require('../../app/modules/images');
+const { uploadImage, updateImage } = require('../../app/modules/images');
 const ErrorMessage = require('../constants');
 
 /**
@@ -40,6 +40,35 @@ async function imageUploadController(req, res) {
   }
 }
 
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function imageUpdateController(req, res) {
+  try {
+    const { permission, price, discount } = req.body;
+    const updateImageResponse = await updateImage({
+      discount,
+      price,
+      permission,
+      imageId: req.params.imageId,
+      userId: req.user._id,
+    });
+    return res.status(updateImageResponse.status).json({
+      ...updateImageResponse,
+      status: undefined,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error,
+    });
+  }
+}
+
 module.exports = {
   imageUploadController,
+  imageUpdateController,
 };
