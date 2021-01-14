@@ -4,7 +4,9 @@ const {
   imageUploadController, imageUpdateController, imageReadController, imageReadBufferController,
 } = require('../controllers/images');
 const { verifyImagePermissionHandler } = require('../middleware/auth');
-const { schemaLoader, imageUploadSchema, imageUpdateSchema } = require('../middleware/schema');
+const {
+  schemaLoader, imageUploadSchema, imageUpdateSchema, readImageSchema,
+} = require('../middleware/schema');
 
 const routes = express.Router();
 
@@ -17,9 +19,8 @@ routes.use(expressFileUpload({
 }));
 
 routes.post('/upload', schemaLoader(imageUploadSchema), imageUploadController);
-// routes.use(verifyUserImage);
-routes.get('/:imageId', verifyImagePermissionHandler, imageReadController);
-routes.get('/read/:imageId', verifyImagePermissionHandler, imageReadBufferController);
-routes.put('/update/:imageId', verifyImagePermissionHandler, schemaLoader(imageUpdateSchema), imageUpdateController);
+routes.get('/:imageId', schemaLoader(readImageSchema), verifyImagePermissionHandler, imageReadController);
+routes.get('/read/:imageId', schemaLoader(readImageSchema), verifyImagePermissionHandler, imageReadBufferController);
+routes.put('/update/:imageId', schemaLoader(imageUpdateSchema), verifyImagePermissionHandler, imageUpdateController);
 
 module.exports = routes;

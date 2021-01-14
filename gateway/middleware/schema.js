@@ -38,10 +38,15 @@ const imageUpdateSchema = Joi.object({
   imageId: Joi.string().length(24).required(),
 }).or('permission', 'discount', 'price');
 
+const readImageSchema = Joi.object({
+  imageId: Joi.string().length(24).required(),
+});
+
 module.exports = {
   schemaLoader,
   loginSchema,
   signUpSchema,
   imageUploadSchema,
   imageUpdateSchema,
+  readImageSchema,
 };
