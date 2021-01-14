@@ -91,6 +91,41 @@ async function readImage({ imageId }) {
   }
 }
 
+async function listPublicImages() {
+  try {
+    const imageResult = [];
+    const imageData = await Images.find({ permission: 'public' }).lean();
+    for (let index = 0; index < imageData.length; index += 1) {
+      const imageList = imageData[index];
+      // eslint-disable-next-line no-await-in-loop
+      const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
+      imageResult.push(s3Image);
+    }
+    return success(imageResult);
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
+async function listUserImages({ userId }) {
+  try {
+    const imageResult = [];
+    const imageData = await Images.find({ userId }).lean();
+    for (let index = 0; index < imageData.length; index += 1) {
+      const imageList = imageData[index];
+      console.info(imageList);
+      // eslint-disable-next-line no-await-in-loop
+      const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
+      imageResult.push(s3Image);
+    }
+    return success(imageResult);
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
 async function verifyImagePermission({ userId, imageId }) {
   try {
     const imageData = await Images.findById(imageId).lean();
@@ -116,4 +151,6 @@ module.exports = {
   uploadImage,
   readImage,
   verifyImagePermission,
+  listPublicImages,
+  listUserImages,
 };
