@@ -150,17 +150,14 @@ async function imageReadBufferController(req, res) {
 async function listPublicImagesController(req, res) {
   try {
     const imageReadBuffer = await listPublicImages();
-    const { success, status, data } = imageReadBuffer;
-    data.map((e) => {
+    // const { success, status, data } = imageReadBuffer;
+    /* data.map((e) => {
       e.ETag = undefined;
       e.VersionId = undefined;
       e.imageKey = undefined;
       return undefined;
-    });
-    return res.status(status).json({
-      success,
-      data,
-    });
+    }); */
+    return res.status(200).json(imageReadBuffer);
   } catch (error) {
     console.error(error);
     return res.status(INTERNAL_SERVER_ERROR).json({
@@ -179,12 +176,12 @@ async function listUserImagesController(req, res) {
   try {
     const imageReadBuffer = await listUserImages({ userId: req.user._id });
     const { success, status, data } = imageReadBuffer;
-    data.map((e) => {
-      e.ETag = undefined;
-      e.VersionId = undefined;
-      e.imageKey = undefined;
-      return undefined;
-    });
+    /*     data.map((e) => {
+        e.ETag = undefined;
+        e.VersionId = undefined;
+        e.imageKey = undefined;
+        return undefined;
+      }); */
     return res.status(status).json({
       success,
       data,

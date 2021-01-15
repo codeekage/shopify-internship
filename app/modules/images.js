@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const { NOT_FOUND, UNAUTHORIZED } = require('http-status');
 const { UNEXPECTED_ERROR_OCCURED } = require('../constants');
-const { uploadImageToS3, readImageFromS3 } = require('../helper/images');
+const { uploadImageToS3, readImageFromS3, listImageFromS3 } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
 
@@ -93,14 +93,10 @@ async function readImage({ imageId }) {
 
 async function listPublicImages() {
   try {
-    const imageResult = [];
-    const imageData = await Images.find({ permission: 'public' }).lean();
-    for (let index = 0; index < imageData.length; index += 1) {
-      const imageList = imageData[index];
-      // eslint-disable-next-line no-await-in-loop
-      const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
-      imageResult.push(s3Image);
-    }
+    const publicImages = await Images.find({ permission: 'public' }).lean();
+    const listImages = await listImageFromS3();
+    const { Contents } = listImages;
+    const imageResult = publicImages.map((list) => Contents.filter((content) => content.Key === list.imageStore.imageURL.split('/')[3]));
     return success(imageResult);
   } catch (error) {
     console.error(error);
@@ -108,7 +104,7 @@ async function listPublicImages() {
   }
 }
 
-async function listUserImages({ userId }) {
+/* async function listUserImages({ userId }) {
   try {
     const imageResult = [];
     const imageData = await Images.find({ userId }).lean();
@@ -119,6 +115,20 @@ async function listUserImages({ userId }) {
       const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
       imageResult.push(s3Image);
     }
+    return success(imageResult);
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+} */
+
+async function listUserImages({ userId }) {
+  try {
+    const publicImages = await Images.find({ userId }).lean();
+    const listImages = await listImageFromS3();
+    const { Contents } = listImages;
+    const imageKey = (list) => list.imageStore.imageURL.split('/')[3];
+    const imageResult = publicImages.map((list) => Contents.filter((content) => content.Key === imageKey(list)));
     return success(imageResult);
   } catch (error) {
     console.error(error);
