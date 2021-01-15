@@ -13,6 +13,7 @@ const { failed, created, success } = require('../utils/responses');
 const { handleInventoryTransactions } = require('./inventory');
 const { createPayPalPayment, savePayPalTransaction, executePayPalPayment } = require('../helper/paypal');
 const { getUser } = require('../helper/users');
+const { getDownloadLink } = require('../helper/cloudinary');
 
 function getCreditTranactions({
   ownerId,
@@ -108,8 +109,8 @@ async function purchaseImage({ imageId, userId }) {
       note_to_payer:
         'Thank you for your interest in this image. Please, contact us for further assistance',
       redirect_urls: {
-        return_url: 'https://example.com',
-        cancel_url: 'https://example.com',
+        return_url: process.env.REDIRECT_URL,
+        cancel_url: process.env.REDIRECT_URL,
       },
     });
     const metadata = {
@@ -210,7 +211,13 @@ async function processImagePurchase({ paymentId, payerId }) {
     data.transaction.ownerId = undefined;
     data.transaction.buyerId = undefined;
     data.transaction._id = undefined;
-    return created(data);
+    const imageData = await Images.findById(imageId).lean();
+    if (!imageData) {
+      return failed(NOT_FOUND, 'Image does not exists.');
+    }
+    const { imageURL } = imageData.imageStore;
+    const downloadLink = await getDownloadLink({ imageURL });
+    return created({ ...data, downloadLink });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

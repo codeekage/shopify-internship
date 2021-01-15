@@ -1,6 +1,9 @@
 const fs = require('fs');
 const AWS = require('aws-sdk');
-const { randomHex } = require('../utils/crypto');
+// const { randomHex } = require('../utils/crypto');
+const { generateRandomString } = require('../utils/rand');
+const { transformImage } = require('./cloudinary');
+const { failed } = require('../utils/responses');
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -41,23 +44,25 @@ function promisifyImageRead({ imageKey, imageVersion }) {
   });
 }
 
-async function uploadImageToS3({ image }) {
+async function uploadAndTransformImage({ image, metadata, permission }) {
   try {
     const imageUploadName = image.name;
-    const hexId = randomHex(15);
+    // const hexId = randomHex(15);
     const extension = imageUploadName.substr(imageUploadName.length - 3);
     const fileContent = fs.readFileSync(image.tempFilePath);
     const uploadDate = Date.now();
-    const result = await promisifyImageUpload({
+    const s3Upload = await promisifyImageUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${hexId}_${uploadDate}.${extension}`,
+      Key: `${generateRandomString(10)}_${uploadDate}.${extension}`,
       Body: fileContent,
       ContentType: image.mimetype,
       ContentMD5: image.md,
     });
-    return result;
+    const cloudinary = await transformImage({ imageURL: s3Upload.Location, metadata, permission });
+    return { s3Upload, cloudinary };
   } catch (error) {
-    return error;
+    console.error(error);
+    return failed(null, error);
   }
 }
 
@@ -70,11 +75,12 @@ async function readImageFromS3({ imageStore }) {
     });
     return { ...result, imageKey };
   } catch (error) {
+    console.error(error);
     return error;
   }
 }
 
 module.exports = {
-  uploadImageToS3,
+  uploadAndTransformImage,
   readImageFromS3,
 };

@@ -30,7 +30,7 @@ async function imageUploadController(req, res) {
 
     const {
       permission, price, discount, name, metadata,
-      description,
+      description, watermark,
     } = req.query;
 
     const queryMetadata = metadata.split(',');
@@ -46,6 +46,7 @@ async function imageUploadController(req, res) {
         name,
         metadata: queryMetadata,
         description,
+        watermark,
       });
       if (!result.success) {
         return res.status(result.status).json({ ...result, status: undefined });
@@ -69,13 +70,16 @@ async function imageUploadController(req, res) {
  */
 async function imageUpdateController(req, res) {
   try {
-    const { permission, price, discount } = req.body;
+    const {
+      permission, price, discount, description,
+    } = req.body;
     const updateImageResponse = await updateImage({
       discount,
       price,
       permission,
       imageId: req.params.imageId,
       userId: req.user._id,
+      description,
     });
     return res.status(updateImageResponse.status).json({
       ...updateImageResponse,
@@ -91,11 +95,11 @@ async function imageUpdateController(req, res) {
 }
 
 /**
- *
+ * @deprecated Improved logic and don't want to loose
  * @param {HttpRequest} req
  * @param {HttpResponse} res
  */
-async function imageReadController(req, res) {
+async function imageReadFileController(req, res) {
   try {
     const readImageResponse = await readImage({
       imageId: req.params.imageId,
@@ -130,7 +134,7 @@ async function imageReadController(req, res) {
  * @param {HttpRequest} req
  * @param {HttpResponse} res
  */
-async function imageReadBufferController(req, res) {
+async function imageReadController(req, res) {
   try {
     const imageReadBuffer = await readImage({
       imageId: req.params.imageId,
@@ -163,9 +167,8 @@ async function listPublicImagesController(req, res) {
     const imageReadBuffer = await listPublicImages();
     const { success, status, data } = imageReadBuffer;
     data.map((e) => {
-      e.ETag = undefined;
-      e.VersionId = undefined;
-      e.imageKey = undefined;
+      e.imageStore = undefined;
+      e.userId = undefined;
       return undefined;
     });
     return res.status(status).json({
@@ -191,9 +194,8 @@ async function listUserImagesController(req, res) {
     const imageReadBuffer = await listUserImages({ userId: req.user._id });
     const { success, status, data } = imageReadBuffer;
     data.map((e) => {
-      e.ETag = undefined;
-      e.VersionId = undefined;
-      e.imageKey = undefined;
+      e.imageStore = undefined;
+      e.userId = undefined;
       return undefined;
     });
     return res.status(status).json({
@@ -213,7 +215,7 @@ module.exports = {
   imageUploadController,
   imageUpdateController,
   imageReadController,
-  imageReadBufferController,
+  imageReadFileController,
   listPublicImagesController,
   listUserImagesController,
 };

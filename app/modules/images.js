@@ -1,8 +1,9 @@
+/* eslint-disable camelcase */
 // eslint-disable-next-line no-unused-vars
 const mongoose = require('mongoose');
-const { NOT_FOUND, UNAUTHORIZED } = require('http-status');
+const { NOT_FOUND, UNAUTHORIZED, BAD_REQUEST } = require('http-status');
 const { UNEXPECTED_ERROR_OCCURED } = require('../constants');
-const { uploadImageToS3, readImageFromS3 } = require('../helper/images');
+const { uploadAndTransformImage } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
 
@@ -20,12 +21,28 @@ async function uploadImage({
   name,
   metadata,
   description,
+  watermark,
 }) {
   try {
-    const s3Upload = await uploadImageToS3({
+    const imageExists = await Images.findOne({ userId, name }).lean();
+    if (imageExists) {
+      return failed(BAD_REQUEST, 'Image already exist');
+    }
+    const transformedImage = await uploadAndTransformImage({
       image,
-      userId,
+      metadata,
+      watermark,
+      permission,
     });
+    const { s3Upload, cloudinary } = transformedImage;
+    const {
+      public_id,
+      url,
+      secure_url,
+      signature,
+      assest_id,
+      format,
+    } = cloudinary;
     const { Location: imageURL, VersionId: imageVersion, ETag: eTag } = s3Upload;
     const imageCreate = await Images.create({
       userId,
@@ -40,13 +57,26 @@ async function uploadImage({
         imageVersion,
         eTag,
       },
+      cloudinary: {
+        public_id,
+        url,
+        secure_url,
+        signature,
+        assest_id,
+        format,
+      },
     });
     if (!imageCreate) {
       return failed(null, UNEXPECTED_ERROR_OCCURED);
     }
     imageCreate.userId = undefined;
-    return created({ imageCreate });
+    return created(imageCreate);
   } catch (error) {
+    if (error.code === 11000) {
+      const [key] = Object.keys(error.keyValue);
+      return failed(400, `An image with this ${key} already exists.`);
+    }
+    console.error(error);
     console.error(error);
     return failed(null, error);
   }
@@ -92,10 +122,7 @@ async function readImage({ imageId }) {
     if (!imageData) {
       return failed(NOT_FOUND, 'Image does not exists');
     }
-    const imageResult = await readImageFromS3({
-      imageStore: imageData.imageStore,
-    });
-    return success(imageResult);
+    return success(imageData);
   } catch (error) {
     return failed(null, error);
   }
@@ -103,15 +130,11 @@ async function readImage({ imageId }) {
 
 async function listPublicImages() {
   try {
-    const imageResult = [];
     const imageData = await Images.find({ permission: 'public' }).lean();
-    for (let index = 0; index < imageData.length; index += 1) {
-      const imageList = imageData[index];
-      // eslint-disable-next-line no-await-in-loop
-      const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
-      imageResult.push(s3Image);
+    if (!imageData) {
+      return failed(NOT_FOUND, 'Nothing to see here.');
     }
-    return success(imageResult);
+    return success(imageData);
   } catch (error) {
     console.error(error);
     return failed(null, error);
@@ -120,16 +143,11 @@ async function listPublicImages() {
 
 async function listUserImages({ userId }) {
   try {
-    const imageResult = [];
     const imageData = await Images.find({ userId }).lean();
-    for (let index = 0; index < imageData.length; index += 1) {
-      const imageList = imageData[index];
-      console.info(imageList);
-      // eslint-disable-next-line no-await-in-loop
-      const s3Image = await readImageFromS3({ imageStore: imageList.imageStore });
-      imageResult.push(s3Image);
+    if (!imageData) {
+      return failed(NOT_FOUND, 'No image for this user');
     }
-    return success(imageResult);
+    return success(imageData);
   } catch (error) {
     console.error(error);
     return failed(null, error);
