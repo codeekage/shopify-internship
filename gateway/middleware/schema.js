@@ -29,6 +29,9 @@ const imageUploadSchema = Joi.object({
   permission: Joi.string().valid('private', 'public').required(),
   price: Joi.number().min(100).required(),
   discount: Joi.number().min(1),
+  name: Joi.string().min(5).required(),
+  metadata: Joi.string(),
+  description: Joi.string(),
 });
 
 const imageUpdateSchema = Joi.object({
@@ -36,6 +39,7 @@ const imageUpdateSchema = Joi.object({
   price: Joi.number().min(100),
   discount: Joi.number().min(1),
   imageId: Joi.string().length(24).required(),
+  description: Joi.string().required(),
 }).or('permission', 'discount', 'price');
 
 const readImageSchema = Joi.object({

@@ -14,6 +14,7 @@ const ImageSchema = new Schema({
   name: {
     type: String, required: true,
   },
+  metadata: [String],
   description: { type: String, required: true },
   imageStore: {
     imageURL: { type: String, required: true },

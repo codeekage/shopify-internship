@@ -17,6 +17,9 @@ async function uploadImage({
   price,
   discount,
   image,
+  name,
+  metadata,
+  description,
 }) {
   try {
     const s3Upload = await uploadImageToS3({
@@ -29,6 +32,9 @@ async function uploadImage({
       permission,
       price: price * 100,
       discount,
+      name,
+      metadata,
+      description,
       imageStore: {
         imageURL,
         imageVersion,
@@ -57,12 +63,16 @@ async function updateImage({
   permission,
   price,
   discount,
+  name,
+  metadata,
 }) {
   try {
     const query = {};
     if (permission) query.permission = permission;
     if (price) query.price = price * 100;
     if (discount) query.discount = discount;
+    if (name) query.name = name;
+    if (metadata) query.metadata = metadata;
     const imageUpdate = await Images.findOneAndUpdate({ _id: imageId, userId },
       { $set: query }, { new: true });
 

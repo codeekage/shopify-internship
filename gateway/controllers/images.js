@@ -2,7 +2,7 @@
 const { request: HttpRequest, response: HttpResponse } = require('express');
 const fs = require('fs');
 const path = require('path');
-const { INTERNAL_SERVER_ERROR } = require('http-status');
+const { INTERNAL_SERVER_ERROR, CREATED } = require('http-status');
 const {
   uploadImage, updateImage, readImage, listPublicImages,
   listUserImages,
@@ -28,7 +28,12 @@ async function imageUploadController(req, res) {
     const imageBuffering = Object.values(req.files);
     const response = [];
 
-    const { permission, price, discount } = req.query;
+    const {
+      permission, price, discount, name, metadata,
+      description,
+    } = req.query;
+
+    const queryMetadata = metadata.split(',');
     for (let index = 0; index < imageBuffering.length; index += 1) {
       const image = imageBuffering[index];
       // eslint-disable-next-line no-await-in-loop
@@ -38,10 +43,16 @@ async function imageUploadController(req, res) {
         permission,
         price,
         discount,
+        name,
+        metadata: queryMetadata,
+        description,
       });
-      response.push(result);
+      if (!result.success) {
+        return res.status(result.status).json({ ...result, status: undefined });
+      }
+      response.push(result.data);
     }
-    return res.json(response);
+    return res.status(CREATED).json({ success: true, data: response });
   } catch (error) {
     console.error(error);
     return res.status(INTERNAL_SERVER_ERROR).json({
