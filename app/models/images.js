@@ -11,6 +11,10 @@ const ImageSchema = new Schema({
   permission: {
     type: String, required: true, enum: IMAGE_PERMISSIONS, default: PUBLIC,
   },
+  name: {
+    type: String, required: true,
+  },
+  description: { type: String, required: true },
   imageStore: {
     imageURL: { type: String, required: true },
     imageVersion: { type: String, required: true },

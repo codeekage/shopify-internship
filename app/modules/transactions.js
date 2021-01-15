@@ -1,14 +1,18 @@
+/* eslint-disable camelcase */
+const numeral = require('numeral');
 const { BAD_REQUEST, NOT_FOUND } = require('http-status');
 const {
-  db, Images, User, Transactions,
+  db, Images, User, Transactions, PayPal,
 } = require('../models');
 const {
   performTransactionWithRetry,
   commitWithRetry,
 } = require('../utils/mongo');
-const { generateRandomString } = require('../utils/rand');
+const { generateRandomString, generateRandomNumber } = require('../utils/rand');
 const { failed, created, success } = require('../utils/responses');
 const { handleInventoryTransactions } = require('./inventory');
+const { createPayPalPayment, savePayPalTransaction, executePayPalPayment } = require('../helper/paypal');
+const { getUser } = require('../helper/users');
 
 function getCreditTranactions({
   ownerId,
@@ -58,7 +62,7 @@ async function creditUser({ amount, userId, session }) {
   }
 }
 
-async function purchaseImage({ imageId, userId, amount }) {
+async function purchaseImage({ imageId, userId }) {
   const session = await db.startSession();
   session.startTransaction();
   try {
@@ -70,22 +74,107 @@ async function purchaseImage({ imageId, userId, amount }) {
     if (!imageData) {
       return failed(NOT_FOUND, 'Image does not exists.');
     }
-    const { userId: ownerId, price, discount } = imageData;
-    if (price > amount) {
-      return failed(BAD_REQUEST, 'You cannot purchase this image.');
+    const { userId: ownerId, price } = imageData;
+    const ownerData = await getUser({ userId: ownerId });
+    if (!ownerData.success) {
+      return failed(null, ownerData.error);
     }
+    const { username } = ownerData.data;
+    const formattedPrice = numeral(price / 100).format('0,00.00');
+    const soft_descriptor = `SIMG${generateRandomNumber(7)}`;
+    const initiaPayment = await createPayPalPayment({
+      amount: {
+        total: formattedPrice,
+        currency: 'USD',
+        details: {
+          subtotal: formattedPrice,
+        },
+      },
+      description: `You are paying for image: ${imageId} from ${username}`,
+      custom: `SHOPFY_IMG_${generateRandomNumber(14)}`,
+      invoice_number: `${generateRandomNumber(11)}`,
+      soft_descriptor,
+      item_list: {
+        items: [
+          {
+            name: 'hat',
+            price: formattedPrice,
+            quantity: '1',
+            sku: '1',
+            currency: 'USD',
+          },
+        ],
+      },
+      note_to_payer:
+        'Thank you for your interest in this image. Please, contact us for further assistance',
+      redirect_urls: {
+        return_url: 'https://example.com',
+        cancel_url: 'https://example.com',
+      },
+    });
+    const metadata = {
+      ownerId, imageId, initiatorsId: userId, soft_descriptor,
+    };
+    const saveTranaction = await savePayPalTransaction(initiaPayment, metadata);
+    if (!saveTranaction.success) {
+      return failed(null, saveTranaction.error);
+    }
+    return created(initiaPayment);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(error);
+    return failed(null, error);
+  }
+}
+async function processImagePurchase({ paymentId, payerId }) {
+  const session = await db.startSession();
+  session.startTransaction();
+  try {
+    const paypalTransaction = await PayPal.findOne({ pay_id: paymentId });
+    if (!paypalTransaction) {
+      return failed(BAD_REQUEST, 'Invalid transaction data');
+    }
+    const { state: existingState } = paypalTransaction;
+    if (existingState !== 'created') {
+      return failed(BAD_REQUEST, `Transaction is already ${existingState}`);
+    }
+    const executePayPayRequest = await executePayPalPayment({
+      payer_id: payerId,
+      payment_id: paymentId,
+    });
+
+    const { state } = executePayPayRequest;
+    if (state !== 'approved') {
+      return failed(BAD_REQUEST, executePayPayRequest);
+    }
+    const {
+      id, cart, payer, transactions,
+    } = executePayPayRequest;
+    const {
+      soft_descriptor: after_payment_soft_descriptor,
+      payee,
+    } = transactions[0];
+    const savedPayPalTranx = await PayPal.findOneAndUpdate({ pay_id: id }, {
+      $set: {
+        cart,
+        payer,
+        payee,
+        state,
+        after_payment_soft_descriptor,
+      },
+    }, { new: true });
+    const { metadata, amount } = savedPayPalTranx;
+    const { imageId, ownerId, initiatorsId } = metadata;
     const txnFunc = getCreditTranactions({
       ownerId,
-      buyerId: userId,
-      paidAmount: amount,
+      buyerId: initiatorsId,
+      paidAmount: Number(amount.total),
       imageId,
       metadata: {
         sub_type: 'purchase_image',
-        discount,
-        price,
       },
     });
-
     const transaction = await performTransactionWithRetry(txnFunc, session);
     if (!transaction.success) {
       await session.abortTransaction();
@@ -93,14 +182,14 @@ async function purchaseImage({ imageId, userId, amount }) {
       return failed(null, transaction.error);
     }
     const creditAccount = await creditUser({
-      amount,
+      amount: amount.total,
       userId: ownerId,
       session,
     });
     const inventory = await handleInventoryTransactions({
-      purchaserId: userId,
+      purchaserId: initiatorsId,
       ownerId,
-      amount,
+      amount: amount.total,
       session,
       imageId,
     });
@@ -132,4 +221,5 @@ async function purchaseImage({ imageId, userId, amount }) {
 
 module.exports = {
   purchaseImage,
+  processImagePurchase,
 };

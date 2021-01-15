@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 const { request: HttpRequest, response: HttpResponse } = require('express');
 const { INTERNAL_SERVER_ERROR } = require('http-status');
-const { purchaseImage } = require('../../app/modules/transactions');
+const { purchaseImage, processImagePurchase } = require('../../app/modules/transactions');
 const ErrorMessage = require('../constants');
 
 /**
@@ -26,6 +26,28 @@ async function purchaseImageController(req, res) {
   }
 }
 
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function processImagePurchaseController(req, res) {
+  try {
+    const purchase = await processImagePurchase({
+      paymentId: req.body.paymentId,
+      payerId: req.body.payerId,
+    });
+    return res.json({ ...purchase, status: undefined });
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: ErrorMessage.GATEWAY_INTERNAL_SERVER_ERROR,
+    });
+  }
+}
+
 module.exports = {
   purchaseImageController,
+  processImagePurchaseController,
 };

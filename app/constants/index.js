@@ -13,4 +13,9 @@ module.exports = {
   ENUMS: {
     IMAGE_PERMISSIONS: ['private', 'public'],
   },
+  PAYPAL: {
+    DEAFAULT: 'paypal',
+    INTENT: 'sale',
+    INSTANT_FUNDING_SOURCE: 'INSTANT_FUNDING_SOURCE',
+  },
 };

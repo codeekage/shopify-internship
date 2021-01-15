@@ -5,6 +5,12 @@ const generateRandomString = (length) => randomString.generate({
   charset: 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz',
 });
 
+const generateRandomNumber = (length) => randomString.generate({
+  length,
+  charset: '0987654321',
+});
+
 module.exports = {
   generateRandomString,
+  generateRandomNumber,
 };
