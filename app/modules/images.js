@@ -2,7 +2,10 @@
 // eslint-disable-next-line no-unused-vars
 const mongoose = require('mongoose');
 const { NOT_FOUND, UNAUTHORIZED, BAD_REQUEST } = require('http-status');
-const { UNEXPECTED_ERROR_OCCURED } = require('../constants');
+const {
+  UNEXPECTED_ERROR_OCCURED, ERRORS, ENUMS, MONGO_TYPE,
+} = require('../constants');
+const { monogoDuplicateError, imageUpdateMessage } = require('../constants/responsesbuilder');
 const { uploadAndTransformImage, readImageFromS3 } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
@@ -26,7 +29,7 @@ async function uploadImage({
   try {
     const imageExists = await Images.findOne({ userId, name }).lean();
     if (imageExists) {
-      return failed(BAD_REQUEST, 'Image already exist');
+      return failed(BAD_REQUEST, ERRORS.IMAGE_EXIST);
     }
     const transformedImage = await uploadAndTransformImage({
       image,
@@ -74,7 +77,7 @@ async function uploadImage({
   } catch (error) {
     if (error.code === 11000) {
       const [key] = Object.keys(error.keyValue);
-      return failed(400, `An image with this ${key} already exists.`);
+      return failed(400, monogoDuplicateError(key, MONGO_TYPE.IMAGE));
     }
     console.error(error);
     console.error(error);
@@ -109,7 +112,7 @@ async function updateImage({
     if (!imageUpdate) {
       return failed(null, UNEXPECTED_ERROR_OCCURED);
     }
-    return success({ imageUpdate, message: `Image [${JSON.stringify(query)}] updated` });
+    return success({ imageUpdate, message: imageUpdateMessage(query) });
   } catch (error) {
     console.error(error);
     return failed(null, error);
@@ -120,7 +123,7 @@ async function readImage({ imageId }) {
   try {
     const imageData = await Images.findById(imageId).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Image does not exists');
+      return failed(NOT_FOUND, ERRORS.IMAGE_NOT_FOUND);
     }
     return success(imageData);
   } catch (error) {
@@ -132,7 +135,7 @@ async function renderImage({ imageId }) {
   try {
     const imageData = await Images.findById(imageId).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Image does not exists');
+      return failed(NOT_FOUND, ERRORS.IMAGE_NOT_FOUND);
     }
     const imageResult = await readImageFromS3({ imageStore: imageData.imageStore });
     return success(imageResult);
@@ -145,7 +148,7 @@ async function listPublicImages() {
   try {
     const imageData = await Images.find({ permission: 'public' }).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Nothing to see here.');
+      return failed(NOT_FOUND, ERRORS.NOTHING_TO_SEE);
     }
     return success(imageData);
   } catch (error) {
@@ -158,7 +161,7 @@ async function listUserImages({ userId }) {
   try {
     const imageData = await Images.find({ userId }).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'No image for this user');
+      return failed(NOT_FOUND, ERRORS.USER_IMAGE_NOT_FOUND);
     }
     return success(imageData);
   } catch (error) {
@@ -171,13 +174,14 @@ async function verifyImagePermission({ userId, imageId }) {
   try {
     const imageData = await Images.findById(imageId).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Image does not exists');
+      return failed(NOT_FOUND, ERRORS.IMAGE_NOT_FOUND);
     }
     const { permission } = imageData;
-    if (permission !== 'public') {
+    const [, PUBLIC] = ENUMS.IMAGE_PERMISSIONS;
+    if (permission !== PUBLIC) {
       const user = await Images.findOne({ _id: imageId, userId });
       if (!user) {
-        return failed(UNAUTHORIZED, 'This image is private and cannot be viewed. You might want to make it public to access it.');
+        return failed(UNAUTHORIZED, ERRORS.PRIVATE_IMAGE);
       }
     }
     return success();

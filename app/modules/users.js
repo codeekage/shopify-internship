@@ -1,4 +1,6 @@
 const { Types } = require('mongoose');
+const { ERRORS, MONGO_TYPE } = require('../constants');
+const { monogoDuplicateError } = require('../constants/responsesbuilder');
 const { User } = require('../models');
 const { created, failed, success } = require('../utils/responses');
 
@@ -21,7 +23,7 @@ async function createUser({ email, password, username }) {
   } catch (error) {
     if (error.code === 11000) {
       const [key] = Object.keys(error.keyValue);
-      return failed(400, `A user with this ${key} already exists.`);
+      return failed(400, monogoDuplicateError(key, MONGO_TYPE.USER));
     }
     console.error(error);
     return failed(null, error);
@@ -36,7 +38,7 @@ async function getUser({ userId }) {
     const id = Types.ObjectId(userId);
     const user = await User.findOne({ _id: id }).lean();
     if (!user) {
-      return failed(null, 'user not found!');
+      return failed(null, ERRORS.USER_NOT_FOUND);
     }
     return success(user);
   } catch (error) {

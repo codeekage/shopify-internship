@@ -24,7 +24,7 @@ const tempStorage = ({ tempLocation, Body }) => new Promise((resolve, reject) =>
 async function imageUploadController(req, res) {
   try {
     if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).json('No files were uploaded.');
+      return res.status(400).json(ErrorMessage.GATEWAY_NO_FILES_TO_UPLOAD);
     }
     const imageBuffering = Object.values(req.files);
     const response = [];
