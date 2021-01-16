@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 const numeral = require('numeral');
 const { BAD_REQUEST, NOT_FOUND } = require('http-status');
+const { ERRORS, SUB_TYPE, PAYPAL } = require('../constants');
 const {
   db, Images, User, Transactions, PayPal,
 } = require('../models');
@@ -14,6 +15,7 @@ const { handleInventoryTransactions } = require('./inventory');
 const { createPayPalPayment, savePayPalTransaction, executePayPalPayment } = require('../helper/paypal');
 const { getUser } = require('../helper/users');
 const { getDownloadLink } = require('../helper/cloudinary');
+const { transactionStateError } = require('../constants/responsesbuilder');
 
 function getCreditTranactions({
   ownerId,
@@ -45,7 +47,7 @@ async function creditUser({ amount, userId, session }) {
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return failed(NOT_FOUND, 'User does not exist');
+      return failed(NOT_FOUND, ERRORS.USER_NOT_EXIST);
     }
     const creditWallet = await User.findOneAndUpdate(
       {
@@ -55,7 +57,7 @@ async function creditUser({ amount, userId, session }) {
       { new: true, session },
     );
     if (!creditWallet) {
-      return failed(null, 'Failed to update wallet balance');
+      return failed(null, ERRORS.WALLET_UPDATE_FAILED);
     }
     return success(creditWallet);
   } catch (error) {
@@ -69,11 +71,11 @@ async function purchaseImage({ imageId, userId }) {
   try {
     const imageOwner = await Images.findOne({ _id: imageId, userId }).lean();
     if (imageOwner) {
-      return failed(BAD_REQUEST, 'You cannot buy an image you own.');
+      return failed(BAD_REQUEST, ERRORS.OWN_IMAGE);
     }
     const imageData = await Images.findById(imageId).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Image does not exists.');
+      return failed(NOT_FOUND, ERRORS.IMAGE_NOT_FOUND);
     }
     const { userId: ownerId, price, name } = imageData;
     const ownerData = await getUser({ userId: ownerId });
@@ -86,7 +88,7 @@ async function purchaseImage({ imageId, userId }) {
     const initiaPayment = await createPayPalPayment({
       amount: {
         total: formattedPrice,
-        currency: 'USD',
+        currency: PAYPAL.CURRENCY,
         details: {
           subtotal: formattedPrice,
         },
@@ -102,12 +104,11 @@ async function purchaseImage({ imageId, userId }) {
             price: formattedPrice,
             quantity: '1',
             sku: '1',
-            currency: 'USD',
+            currency: PAYPAL.CURRENCY,
           },
         ],
       },
-      note_to_payer:
-        'Thank you for your interest in this image. Please, contact us for further assistance',
+      note_to_payer: PAYPAL.PAYER_NOTE,
       redirect_urls: {
         return_url: process.env.REDIRECT_URL,
         cancel_url: process.env.REDIRECT_URL,
@@ -134,11 +135,11 @@ async function processImagePurchase({ paymentId, payerId }) {
   try {
     const paypalTransaction = await PayPal.findOne({ pay_id: paymentId });
     if (!paypalTransaction) {
-      return failed(BAD_REQUEST, 'Invalid transaction data');
+      return failed(BAD_REQUEST, ERRORS.INVALID_TRANSACTION);
     }
     const { state: existingState } = paypalTransaction;
-    if (existingState !== 'created') {
-      return failed(BAD_REQUEST, `Transaction is already ${existingState}`);
+    if (existingState !== PAYPAL.TRANSACTION_STATE.CREATED) {
+      return failed(BAD_REQUEST, transactionStateError(existingState));
     }
     const executePayPayRequest = await executePayPalPayment({
       payer_id: payerId,
@@ -146,7 +147,7 @@ async function processImagePurchase({ paymentId, payerId }) {
     });
 
     const { state } = executePayPayRequest;
-    if (state !== 'approved') {
+    if (state !== PAYPAL.TRANSACTION_STATE.APPROVED) {
       return failed(BAD_REQUEST, executePayPayRequest);
     }
     const {
@@ -173,7 +174,7 @@ async function processImagePurchase({ paymentId, payerId }) {
       paidAmount: Number(amount.total),
       imageId,
       metadata: {
-        sub_type: 'purchase_image',
+        sub_type: SUB_TYPE.PURCHASE_IMAGE,
       },
     });
     const transaction = await performTransactionWithRetry(txnFunc, session);
@@ -213,7 +214,7 @@ async function processImagePurchase({ paymentId, payerId }) {
     data.transaction._id = undefined;
     const imageData = await Images.findById(imageId).lean();
     if (!imageData) {
-      return failed(NOT_FOUND, 'Image does not exists.');
+      return failed(NOT_FOUND, ERRORS.IMAGE_NOT_FOUND);
     }
     const { imageURL } = imageData.imageStore;
     const downloadLink = await getDownloadLink({ imageURL });

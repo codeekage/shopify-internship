@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 const cloudinary = require('cloudinary').v2;
+const { CLOUDINARY } = require('../constants');
 
 const {
   CLOUDINARY_API_KEY,
@@ -36,8 +37,8 @@ async function transformImage({
     const cloudinaryUpload = await cloudinary.uploader.upload(
       `${s3URI}`,
       {
-        folder: 'shopify_internship',
-        type: 'private',
+        folder: process.env.CLOUDINARY_FOLDER,
+        type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
         tags: metadata.join(','),
         transformation: {
           overlay: useWaterMarker(permission, watermark),
@@ -57,9 +58,9 @@ async function getDownloadLink({ imageURL }) {
     const cloudUpload = await cloudinary.uploader.upload(
       `${s3URI}`,
       {
-        folder: 'shopify_internship',
-        type: 'private',
-        tags: 'downloadable',
+        folder: process.env.CLOUDINARY_FOLDER,
+        type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
+        tags: CLOUDINARY.CLOUDINARY_TAGS.DOWNLOADABLE,
         attachment: true,
       },
     );

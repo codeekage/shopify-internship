@@ -1,4 +1,5 @@
 const { Types } = require('mongoose');
+const { USER_NOT_FOUND } = require('../constants');
 const { User } = require('../models');
 const { failed, success } = require('../utils/responses');
 
@@ -10,7 +11,7 @@ async function getUser({ userId }) {
     const id = Types.ObjectId(userId);
     const user = await User.findOne({ _id: id }).lean();
     if (!user) {
-      return failed(null, 'user not found!');
+      return failed(null, USER_NOT_FOUND);
     }
     return success(user);
   } catch (error) {
