@@ -75,7 +75,7 @@ async function purchaseImage({ imageId, userId }) {
     if (!imageData) {
       return failed(NOT_FOUND, 'Image does not exists.');
     }
-    const { userId: ownerId, price } = imageData;
+    const { userId: ownerId, price, name } = imageData;
     const ownerData = await getUser({ userId: ownerId });
     if (!ownerData.success) {
       return failed(null, ownerData.error);
@@ -98,7 +98,7 @@ async function purchaseImage({ imageId, userId }) {
       item_list: {
         items: [
           {
-            name: 'hat',
+            name,
             price: formattedPrice,
             quantity: '1',
             sku: '1',

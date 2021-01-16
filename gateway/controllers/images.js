@@ -6,6 +6,7 @@ const { INTERNAL_SERVER_ERROR, CREATED } = require('http-status');
 const {
   uploadImage, updateImage, readImage, listPublicImages,
   listUserImages,
+  renderImage,
 } = require('../../app/modules/images');
 const ErrorMessage = require('../constants');
 
@@ -101,7 +102,7 @@ async function imageUpdateController(req, res) {
  */
 async function imageReadFileController(req, res) {
   try {
-    const readImageResponse = await readImage({
+    const readImageResponse = await renderImage({
       imageId: req.params.imageId,
       userId: req.user._id,
     });

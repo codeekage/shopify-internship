@@ -1,6 +1,5 @@
 require('dotenv').config({ path: '../../.env' });
 const axios = require('axios');
-const axiosDefault = require('axios').default;
 const qs = require('qs');
 
 async function generateAccessToken() {
@@ -31,7 +30,7 @@ async function generateAccessToken() {
 async function axiosInstance() {
   try {
     const authRequest = await generateAccessToken();
-    const config = axiosDefault.create({
+    const config = axios.default.create({
       baseURL: process.env.PAYPAL_BASE_URL,
       headers: {
         'Content-Type': 'application/json',

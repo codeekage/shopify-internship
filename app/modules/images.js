@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 const { NOT_FOUND, UNAUTHORIZED, BAD_REQUEST } = require('http-status');
 const { UNEXPECTED_ERROR_OCCURED } = require('../constants');
-const { uploadAndTransformImage } = require('../helper/images');
+const { uploadAndTransformImage, readImageFromS3 } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
 
@@ -128,6 +128,19 @@ async function readImage({ imageId }) {
   }
 }
 
+async function renderImage({ imageId }) {
+  try {
+    const imageData = await Images.findById(imageId).lean();
+    if (!imageData) {
+      return failed(NOT_FOUND, 'Image does not exists');
+    }
+    const imageResult = await readImageFromS3({ imageStore: imageData.imageStore });
+    return success(imageResult);
+  } catch (error) {
+    return failed(null, error);
+  }
+}
+
 async function listPublicImages() {
   try {
     const imageData = await Images.find({ permission: 'public' }).lean();
@@ -181,4 +194,5 @@ module.exports = {
   verifyImagePermission,
   listPublicImages,
   listUserImages,
+  renderImage,
 };

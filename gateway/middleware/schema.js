@@ -47,6 +47,15 @@ const readImageSchema = Joi.object({
   imageId: Joi.string().length(24).required(),
 });
 
+const purchaseImageSchema = Joi.object({
+  imageId: Joi.string().length(24).required(),
+});
+
+const processImagePurchaseSchema = Joi.object({
+  paymentId: Joi.string().length(30).required(),
+  payerId: Joi.string().alphanum().required(),
+});
+
 module.exports = {
   schemaLoader,
   loginSchema,
@@ -54,4 +63,6 @@ module.exports = {
   imageUploadSchema,
   imageUpdateSchema,
   readImageSchema,
+  processImagePurchaseSchema,
+  purchaseImageSchema,
 };
