@@ -682,6 +682,12 @@ Get Image by imageID
 `60045d60f2e91<imageId>`
 {% endapi-method-parameter %}
 {% endapi-method-path-parameters %}
+
+{% api-method-headers %}
+{% api-method-parameter name="Authorization" type="string" required=true %}
+Bearer `{{ACCESS_TOKEN}}`
+{% endapi-method-parameter %}
+{% endapi-method-headers %}
 {% endapi-method-request %}
 
 {% api-method-response %}
