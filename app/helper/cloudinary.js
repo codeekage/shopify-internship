@@ -13,13 +13,13 @@ cloudinary.config({
   api_secret: CLOUDINARY_SECRET,
 });
 
-const getImageS3URI = (imageURL) => imageURL.replace('https', 's3')
-  .replace('.s3.amazonaws.com', '');
+const getImageS3URI = (imageURL) => `s3://${process.env.AWS_BUCKET_NAME}/${imageURL.split('/')[3]}`;
 
 const useWaterMarker = (permission, watermark) => {
   if (watermark) {
     return 'shopify_icon';
-  } if (permission === 'public') {
+  }
+  if (permission === 'public') {
     return 'shopify_icon';
   }
   return undefined;
@@ -34,17 +34,14 @@ async function transformImage({
 }) {
   try {
     const s3URI = getImageS3URI(imageURL);
-    const cloudinaryUpload = await cloudinary.uploader.upload(
-      `${s3URI}`,
-      {
-        folder: process.env.CLOUDINARY_FOLDER,
-        type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
-        tags: metadata.join(','),
-        transformation: {
-          overlay: useWaterMarker(permission, watermark),
-        },
+    const cloudinaryUpload = await cloudinary.uploader.upload(`${s3URI}`, {
+      folder: process.env.CLOUDINARY_FOLDER,
+      type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
+      tags: metadata.join(','),
+      transformation: {
+        overlay: useWaterMarker(permission, watermark),
       },
-    );
+    });
     return cloudinaryUpload;
   } catch (error) {
     console.error(error);
@@ -55,17 +52,17 @@ async function transformImage({
 async function getDownloadLink({ imageURL }) {
   try {
     const s3URI = getImageS3URI(imageURL);
-    const cloudUpload = await cloudinary.uploader.upload(
-      `${s3URI}`,
-      {
-        folder: process.env.CLOUDINARY_FOLDER,
-        type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
-        tags: CLOUDINARY.CLOUDINARY_TAGS.DOWNLOADABLE,
-        attachment: true,
-      },
-    );
+    const cloudUpload = await cloudinary.uploader.upload(`${s3URI}`, {
+      folder: process.env.CLOUDINARY_FOLDER,
+      type: CLOUDINARY.CLOUDONARY_UPLOAD_TYPE,
+      tags: CLOUDINARY.CLOUDINARY_TAGS.DOWNLOADABLE,
+      attachment: true,
+    });
     const { public_id, format } = cloudUpload;
-    const downloadLink = await cloudinary.utils.private_download_url(public_id, format);
+    const downloadLink = await cloudinary.utils.private_download_url(
+      public_id,
+      format,
+    );
     return downloadLink;
   } catch (error) {
     console.error(error);
