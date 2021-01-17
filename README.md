@@ -11,7 +11,7 @@ Welcome
 {% endapi-method-summary %}
 
 {% api-method-description %}
-This endpoint allows you to get free cakes.
+This the root endpoint. Welcome! 
 {% endapi-method-description %}
 
 {% api-method-spec %}
