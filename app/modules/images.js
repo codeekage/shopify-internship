@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 const { NOT_FOUND, UNAUTHORIZED, BAD_REQUEST } = require('http-status');
 const {
-  UNEXPECTED_ERROR_OCCURED, ERRORS, ENUMS, MONGO_TYPE,
+  UNEXPECTED_ERROR_OCCURED, ERRORS, ENUMS, MONGO_TYPE, UNAUTHORIZIED_ACTION,
 } = require('../constants');
 const { monogoDuplicateError, imageUpdateMessage } = require('../constants/responsesbuilder');
 const { uploadAndTransformImage, readImageFromS3 } = require('../helper/images');
@@ -98,6 +98,7 @@ async function updateImage({
   discount,
   name,
   metadata,
+  description,
 }) {
   try {
     const query = {};
@@ -106,6 +107,7 @@ async function updateImage({
     if (discount) query.discount = discount;
     if (name) query.name = name;
     if (metadata) query.metadata = metadata;
+    if (description) query.description = description;
     const imageUpdate = await Images.findOneAndUpdate({ _id: imageId, userId },
       { $set: query }, { new: true });
 
@@ -170,6 +172,19 @@ async function listUserImages({ userId }) {
   }
 }
 
+async function deleteUserImage({ userId, imageId }) {
+  try {
+    const imageData = await Images.findOneAndDelete({ _id: imageId, userId }).lean();
+    if (!imageData) {
+      return failed(NOT_FOUND, ERRORS.USER_IMAGE_NOT_FOUND);
+    }
+    return success(imageData);
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
 async function verifyImagePermission({ userId, imageId }) {
   try {
     const imageData = await Images.findById(imageId).lean();
@@ -191,6 +206,19 @@ async function verifyImagePermission({ userId, imageId }) {
   }
 }
 
+async function verifyImageOwnership({ userId, imageId }) {
+  try {
+    const imageOwner = await Images.findOne({ _id: imageId, userId }).lean();
+    if (!imageOwner) {
+      return failed(BAD_REQUEST, UNAUTHORIZIED_ACTION);
+    }
+    return success();
+  } catch (error) {
+    console.error(error);
+    return failed(null, error);
+  }
+}
+
 module.exports = {
   updateImage,
   uploadImage,
@@ -199,4 +227,6 @@ module.exports = {
   listPublicImages,
   listUserImages,
   renderImage,
+  verifyImageOwnership,
+  deleteUserImage,
 };
