@@ -44,6 +44,20 @@ function promisifyImageRead({ imageKey, imageVersion }) {
   });
 }
 
+function promisifyImageDelete({ imageKey }) {
+  return new Promise((resolve, reject) => {
+    s3.deleteObject({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: imageKey,
+    }, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(data);
+    });
+  });
+}
+
 async function uploadAndTransformImage({ image, metadata, permission }) {
   try {
     const imageUploadName = image.name;
@@ -80,7 +94,22 @@ async function readImageFromS3({ imageStore }) {
   }
 }
 
+async function deleteImageFromS3({ imageStore }) {
+  try {
+    const { imageURL, imageVersion } = imageStore;
+    const imageKey = imageURL.split('/')[3];
+    const result = await promisifyImageDelete({
+      imageKey, imageVersion,
+    });
+    return { ...result, imageKey };
+  } catch (error) {
+    console.error(error);
+    return error;
+  }
+}
+
 module.exports = {
   uploadAndTransformImage,
   readImageFromS3,
+  deleteImageFromS3,
 };
