@@ -90,7 +90,8 @@ Here's a [PostMan Collection](https://www.getpostman.com/collections/2ea47ca12c4
 
 
 ### API Documentation 
-- [Docs](https://documenter.getpostman.com/view/2893258/TVzVhvcx#1ccbde2e-ba01-4831-862f-088da2527d8e)
+- [Docs](https://shopifyinternship.gitbook.io/imagerepository/)
+- [PostMan Docs](https://documenter.getpostman.com/view/2893258/TVzVhvcx#1ccbde2e-ba01-4831-862f-088da2527d8e)
 
 ### Having Troubles? 
   - Contact me via [email](mailto://agiriabrahamjunior@gmail.com) or [twitter](https://twitter.com/@codeekage) 
