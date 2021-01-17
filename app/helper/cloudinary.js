@@ -49,6 +49,24 @@ async function transformImage({
   }
 }
 
+/**
+ *
+ * @param {{ imageURL: string, metadata: string[] }} param0
+ */
+async function destoryImage({
+  public_id,
+}) {
+  try {
+    const cloudinaryUpload = await cloudinary.uploader.destroy(public_id, {
+      type: 'private',
+    });
+    return cloudinaryUpload;
+  } catch (error) {
+    console.error(error);
+    return error;
+  }
+}
+
 async function getDownloadLink({ imageURL }) {
   try {
     const s3URI = getImageS3URI(imageURL);
@@ -73,4 +91,5 @@ async function getDownloadLink({ imageURL }) {
 module.exports = {
   transformImage,
   getDownloadLink,
+  destoryImage,
 };
