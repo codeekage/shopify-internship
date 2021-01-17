@@ -6,9 +6,10 @@ const {
   UNEXPECTED_ERROR_OCCURED, ERRORS, ENUMS, MONGO_TYPE, UNAUTHORIZIED_ACTION,
 } = require('../constants');
 const { monogoDuplicateError, imageUpdateMessage } = require('../constants/responsesbuilder');
-const { uploadAndTransformImage, readImageFromS3 } = require('../helper/images');
+const { uploadAndTransformImage, readImageFromS3, deleteImageFromS3 } = require('../helper/images');
 const { Images } = require('../models');
 const { failed, success, created } = require('../utils/responses');
+const { destoryImage } = require('../helper/cloudinary');
 
 /**
  *
@@ -175,9 +176,15 @@ async function listUserImages({ userId }) {
 async function deleteUserImage({ userId, imageId }) {
   try {
     const imageData = await Images.findOneAndDelete({ _id: imageId, userId }).lean();
+    const { cloudinary, imageStore } = imageData;
+    const { public_id } = cloudinary;
+
     if (!imageData) {
       return failed(NOT_FOUND, ERRORS.USER_IMAGE_NOT_FOUND);
     }
+
+    await destoryImage({ public_id });
+    await deleteImageFromS3({ imageStore });
     return success(imageData);
   } catch (error) {
     console.error(error);
