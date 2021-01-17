@@ -129,11 +129,11 @@ async function purchaseImage({ imageId, userId }) {
     return failed(null, error);
   }
 }
-async function processImagePurchase({ paymentId, payerId }) {
+async function processImagePurchase({ paymentId, payerId, userId }) {
   const session = await db.startSession();
   session.startTransaction();
   try {
-    const paypalTransaction = await PayPal.findOne({ pay_id: paymentId });
+    const paypalTransaction = await PayPal.findOne({ pay_id: paymentId, 'metadata.initiatorsId': userId });
     if (!paypalTransaction) {
       return failed(BAD_REQUEST, ERRORS.INVALID_TRANSACTION);
     }

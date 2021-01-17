@@ -36,6 +36,7 @@ async function processImagePurchaseController(req, res) {
     const purchase = await processImagePurchase({
       paymentId: req.body.paymentId,
       payerId: req.body.payerId,
+      userId: req.user._id,
     });
     return res.json({ ...purchase, status: undefined });
   } catch (error) {
