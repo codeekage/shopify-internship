@@ -3,8 +3,9 @@ const expressFileUpload = require('express-fileupload');
 const {
   imageUploadController, imageUpdateController, imageReadController, listPublicImagesController, listUserImagesController,
   imageReadFileController,
+  deleteUserImageController,
 } = require('../controllers/images');
-const { verifyImagePermissionHandler } = require('../middleware/auth');
+const { verifyImagePermissionHandler, verifyImageOwnershipHandler } = require('../middleware/auth');
 const {
   schemaLoader, imageUploadSchema, imageUpdateSchema, readImageSchema,
 } = require('../middleware/schema');
@@ -25,6 +26,7 @@ routes.get('/', listUserImagesController);
 routes.get('/public', listPublicImagesController);
 routes.get('/:imageId', schemaLoader(readImageSchema), verifyImagePermissionHandler, imageReadController);
 routes.get('/render/:imageId', schemaLoader(readImageSchema), verifyImagePermissionHandler, imageReadFileController);
-routes.put('/update/:imageId', schemaLoader(imageUpdateSchema), verifyImagePermissionHandler, imageUpdateController);
+routes.put('/update/:imageId', schemaLoader(imageUpdateSchema), verifyImagePermissionHandler, verifyImageOwnershipHandler, imageUpdateController);
+routes.delete('/delete/:imageId', schemaLoader(imageUpdateSchema), verifyImagePermissionHandler, verifyImageOwnershipHandler, deleteUserImageController);
 
 module.exports = routes;

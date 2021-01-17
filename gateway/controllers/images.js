@@ -7,6 +7,7 @@ const {
   uploadImage, updateImage, readImage, listPublicImages,
   listUserImages,
   renderImage,
+  deleteUserImage,
 } = require('../../app/modules/images');
 const ErrorMessage = require('../constants');
 
@@ -212,6 +213,34 @@ async function listUserImagesController(req, res) {
   }
 }
 
+/**
+ *
+ * @param {HttpRequest} req
+ * @param {HttpResponse} res
+ */
+async function deleteUserImageController(req, res) {
+  try {
+    const deleteImage = await deleteUserImage({ userId: req.user._id, imageId: req.params.imageId });
+    const { success, status, error } = deleteImage;
+    if (!success) {
+      return res.status(status).json({
+        success,
+        error,
+      });
+    }
+    return res.status(status).json({
+      success,
+      message: 'Image Deleted!',
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error,
+    });
+  }
+}
+
 module.exports = {
   imageUploadController,
   imageUpdateController,
@@ -219,4 +248,5 @@ module.exports = {
   imageReadFileController,
   listPublicImagesController,
   listUserImagesController,
+  deleteUserImageController,
 };

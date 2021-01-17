@@ -1,6 +1,7 @@
 module.exports = {
   CREATED_SUCCESSFULLY: 'created successfully',
-  UNEXPECTED_ERROR_OCCURED: 'An expected error occured',
+  UNEXPECTED_ERROR_OCCURED: 'An unexpected error occured',
+  UNAUTHORIZIED_ACTION: 'You are attempting to perform an unauthorized action. Please, contact support.',
   INVALID_LOGIN: 'Invalid username or password. Please, check and try again.',
   REDIS_KEY_PREFIX: '$$SHOPIFY_',
   REDIS_KEYS: ['REQUEST_COUNT', 'COOLDOWN', 'IS_BLOCKED', 'RETRY_COUNT'],
