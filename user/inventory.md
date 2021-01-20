@@ -30,20 +30,20 @@ User's Inventory
     "data": {
         "inventory": [
             {
-                "_id": "60046766f2e9150015d9ef26",
+                "_id": "60046766f2e915001...",
                 "amount": 100,
-                "imageId": "60045d60f2e9150015d9ef1d",
-                "userId": "60046302f2e9150015d9ef1f",
+                "imageId": "60045d60....",
+                "userId": "60046302f2e91....",
                 "type": "purchased",
                 "createdAt": "2021-01-17T16:35:50.474Z",
                 "updatedAt": "2021-01-17T16:35:50.474Z",
                 "__v": 0
             },
             {
-                "_id": "6004856f65a08c7d0d66238a",
+                "_id": "6004856f65a08c7...",
                 "amount": 100,
-                "imageId": "60045d60f2e9150015d9ef1d",
-                "userId": "60046302f2e9150015d9ef1f",
+                "imageId": "60045d60f2e91....",
+                "userId": "60046302f2e91500....",
                 "type": "purchased",
                 "createdAt": "2021-01-17T18:43:59.126Z",
                 "updatedAt": "2021-01-17T18:43:59.126Z",
