@@ -9,6 +9,7 @@
 ## User
 
 * [Profile](user/profile.md)
+* [Inventory](user/inventory.md)
 
 ## Images
 
@@ -20,4 +21,6 @@
 ## Payments
 
 * [Buying Images](payments/buying-images.md)
+
+## Inventory
 
